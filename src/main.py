@@ -3,6 +3,8 @@ import json
 import logging
 import sys
 from datetime import datetime, timedelta
+import pytz
+from time import sleep
 
 from booking_goals import transform_yaml_to_dict
 from client import AimHarderClient
@@ -85,11 +87,13 @@ def main(
     box_name,
     box_id,
     days_in_advance,
+    booking_hour,
     booking_goals=None,
     booking_goals_yaml_file=None,
     family_id=None,
     days_off_file=None,
 ):
+    print(booking_goals)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
@@ -127,7 +131,19 @@ def main(
         classes = client.get_classes(target_day, family_id)
         # From all the classes fetched, we select the one we want to book.
         class_id = get_class_to_book(classes, target_time, target_name)
-        client.book_class(target_day, class_id, family_id)
+
+        time_zone = pytz.timezone('Europe/Madrid')
+        time_now = datetime.now(time_zone)
+        start_time = datetime.strptime(str(booking_hour), '%H%M')
+
+        while(1):
+            logging.info("Waiting booking hour")
+            if (time_now.minute == start_time.minute) & (time_now.hour == start_time.hour):
+                client.book_class(target_day, class_id, family_id)
+                break
+            sleep(2)
+            time_now = datetime.now(time_zone)
+
     except DayOff as e:
         logging.error(e)
         sys.exit(0)
@@ -150,6 +166,7 @@ if __name__ == "__main__":
      --box-name lahuellacrossfit
      --box-id 3984
      --booking-goal '{"0":{"time": "1815", "name": "Provenza"}}'
+     --booking-hour 2200
      --booking-goal-yaml-file /path/booking-goals.yaml
      --family-id 123456
      --days-off-file /path/days-off.txt'
@@ -191,6 +208,7 @@ if __name__ == "__main__":
         default=3,
         help="Number of days in advance to book",
     )
+    parser.add_argument("--booking-hour", required=True, type=int, help="Booking hour")
     parser.add_argument(
         "--family-id",
         required=False,
