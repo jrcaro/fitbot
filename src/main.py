@@ -141,7 +141,15 @@ def main(
             if (time_now.minute == start_time.minute) & (time_now.hour == start_time.hour):
                 client.book_class(target_day, class_id, family_id)
                 break
-            sleep(2)
+            
+            sleep_h = start_time.hour - time_now.hour
+            sleep_m = start_time.minute - time_now.minute
+            if (sleep_h*60 + sleep_m) >= 2:
+                sleep((sleep_h*60 + sleep_m - 1)*60)
+            elif (sleep_h*60 + sleep_m) < 2 & (sleep_h*60 + sleep_m) >= 1:
+                sleep(20)
+            else:
+                sleep(1)
             time_now = datetime.now(time_zone)
 
     except DayOff as e:
