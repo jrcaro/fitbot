@@ -22,4 +22,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: execute py script # run main.py
-        run: python src/main.py --email ${{ secrets.EMAIL_JRC }} --password ${{ secrets.PASS_JRC }} --booking-goals "{\"0\":{\"time\":\"0700\",\"name\":\"Método42\"},\"1\":{\"time\":\"0700\",\"name\":\"Método42\"},\"2\":{\"time\":\"0700\",\"name\":\"Método42\"},\"3\":{\"time\":\"0700\",\"name\":\"Método42\"},\"4\":{\"time\":\"0700\",\"name\":\"Método42\"}}" --box-name metodo42orsonwelles --box-id 10059 --days-in-advance 3 --booking-hour 2200
+        run: python src/main.py --email ${{ secrets.EMAIL_VIO }} --password ${{ secrets.PASS_VIO }} --booking-goals "{\"0\":{\"time\":\"0700\",\"name\":\"Método42\"},\"1\":{\"time\":\"0700\",\"name\":\"Método42\"},\"2\":{\"time\":\"0700\",\"name\":\"Método42\"},\"3\":{\"time\":\"0700\",\"name\":\"Método42\"},\"4\":{\"time\":\"0700\",\"name\":\"Método42\"}}" --box-name metodo42orsonwelles --box-id 10059 --days-in-advance 3 --booking-hour 2200
