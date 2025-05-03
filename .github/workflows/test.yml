@@ -1,4 +1,4 @@
-name: run main.py
+name: test
 
 on:
   schedule:
@@ -22,4 +22,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: execute py script # run main.py
-        run: python src/main.py --email ${{ secrets.EMAIL_JRC }} --password ${{ secrets.PASS_JRC }} --booking-goals "{\"0\":{\"time\":\"1700\",\"name\":\"Método42\"}}" --box-name metodo42orsonwelles --box-id 10059 --days-in-advance 2 --booking-hour 1700
+        run: python src/main.py --email ${{ secrets.EMAIL_JRC }} --password ${{ secrets.PASS_JRC }} --booking-goals "{\"0\":{\"time\":\"1700\",\"name\":\"Método42\"}}" --box-name metodo42orsonwelles --box-id 10059 --days-in-advance 2 --booking-hour 1710
