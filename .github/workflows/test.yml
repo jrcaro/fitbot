@@ -2,7 +2,7 @@ name: test
 
 on:
   schedule:
-    - cron: '00,05,10 15 * * 6' # At 00:00 on Monday
+    - cron: '00,10,15 15 * * 6' # At 00:00 on Monday
 
 jobs:
   build:
