@@ -2,6 +2,7 @@ import logging
 import time
 from datetime import datetime
 from http import HTTPStatus
+from typing import Optional
 
 from bs4 import BeautifulSoup
 from requests import Session
@@ -18,13 +19,21 @@ from exceptions import (
     TooManyWrongAttempts,
     MESSAGE_BOOKING_FAILED_UNKNOWN,
     MESSAGE_BOOKING_FAILED_NO_CREDIT,
+    MESSAGE_ALREADY_BOOKED_FOR_TIME,
     ErrorResponse,
 )
-
+from logger import logger
 
 class AimHarderClient:
-    def __init__(self, email: str, password: str, box_id: int, box_name: str):
-        self.session = self._login(email, password)
+    def __init__(
+        self,
+        email: str,
+        password: str,
+        box_id: int,
+        box_name: str,
+        proxy: Optional[str] = None,
+    ):
+        self.session = self._login(email, password, proxy)
         self.box_id = box_id
         self.box_name = box_name
 
@@ -33,8 +42,10 @@ class AimHarderClient:
         self.logger.debug("Client connected to AimHarder.")
 
     @staticmethod
-    def _login(email: str, password: str):
+    def _login(email: str, password: str, proxy: Optional[str] = None) -> Session:
         session = Session()
+        session.proxies = {"https": proxy}
+        logger.info(f"Using proxy: {proxy}" if proxy else "No proxy is being used")
         response = session.post(
             LOGIN_ENDPOINT,
             data={
@@ -113,7 +124,7 @@ class AimHarderClient:
             if "bookState" in response and response["bookState"] == -2:
                 raise BookingFailed(MESSAGE_BOOKING_FAILED_NO_CREDIT)
             if "bookState" in response and response["bookState"] == -12:
-                raise BookingFailed(response["errorMssg"])
+                raise BookingFailed(MESSAGE_ALREADY_BOOKED_FOR_TIME)
             if "errorMssg" not in response and "errorMssgLang" not in response:
                 # booking went fine
                 self.logger.info("Booking completed successfully.")

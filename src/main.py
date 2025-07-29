@@ -1,11 +1,10 @@
 import argparse
 import json
-import logging
 import sys
 from datetime import datetime, timedelta
 import pytz
 from time import sleep
-
+from logger import logger
 from booking_goals import transform_yaml_to_dict
 from client import AimHarderClient
 from exceptions import (
@@ -64,7 +63,7 @@ def load_text_file_content(text_file_path):
             ]
             return lines
     except FileNotFoundError:
-        logging.info(f"File not found: {text_file_path}")
+        logger.info(f"File not found: {text_file_path}")
         raise FileNotFoundError
         # return []
 
@@ -92,14 +91,12 @@ def main(
     booking_goals_yaml_file=None,
     family_id=None,
     days_off_file=None,
+    proxy=None,
 ):
     print(booking_goals)
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
 
     if not booking_goals and not booking_goals_yaml_file:
-        logging.error(
+        logger.error(
             "Provide your booking goals using either --booking-goals-yaml-file or"
             " --booking-goals"
         )
@@ -110,7 +107,7 @@ def main(
             with open(booking_goals_yaml_file, "r") as file:
                 booking_goals = transform_yaml_to_dict(file)
         except FileNotFoundError:
-            logging.info(f"File not found: {booking_goals_yaml_file}")
+            logger.info(f"File not found: {booking_goals_yaml_file}")
             raise FileNotFoundError
 
     target_day = datetime.today() + timedelta(days=days_in_advance)
@@ -118,13 +115,13 @@ def main(
         # We get the class time and name we want to book
         target_time, target_name = get_booking_goal_time(target_day, booking_goals)
         validate_target_day(target_day, days_off_file)
-        logging.info(
+        logger.info(
             f"Found date ({target_day.strftime('%A, %Y-%m-%d')}), "
             f"time ({target_time}) and name class ({target_name}) to book."
         )
 
         client = AimHarderClient(
-            email=email, password=password, box_id=box_id, box_name=box_name
+            email=email, password=password, box_id=box_id, box_name=box_name, proxy=proxy
         )
 
         # We fetch the classes that are scheduled for the target day
@@ -137,10 +134,14 @@ def main(
         start_time = datetime.strptime(str(booking_hour), '%H%M')
 
         while(1):
-            logging.info("Waiting booking hour")
+            logger.info("Waiting booking hour")
             if (time_now.minute == start_time.minute) & (time_now.hour == start_time.hour):
-                client.book_class(target_day, class_id, family_id)
-                break
+                try:
+                    client.book_class(target_day, class_id, family_id)
+                    break
+                except Exception:
+                    client.book_class(target_day, class_id, family_id)
+                    break
             
             sleep_h = start_time.hour - time_now.hour
             sleep_m = start_time.minute - time_now.minute
@@ -153,7 +154,7 @@ def main(
             time_now = datetime.now(time_zone)
 
     except DayOff as e:
-        logging.error(e)
+        logger.error(e)
         sys.exit(0)
     except (
         NoClassOnTargetDayTime,
@@ -162,7 +163,7 @@ def main(
         BookingFailed,
         InvalidBookingGoals,
     ) as e:
-        logging.error(e)
+        logger.error(e)
         sys.exit(1)
 
 
@@ -178,6 +179,7 @@ if __name__ == "__main__":
      --booking-goal-yaml-file /path/booking-goals.yaml
      --family-id 123456
      --days-off-file /path/days-off.txt'
+     --proxy socks5://89.58.45.94:34472
     """
     parser = argparse.ArgumentParser(
         description="CLI tool to book classes on AimHarder"
@@ -234,6 +236,7 @@ if __name__ == "__main__":
             " with the format YYYY-MM-dd. On these days we won't book any classes."
         ),
     )
+    parser.add_argument("--proxy", required=False, type=str, default=None)
 
     args = parser.parse_args()
     input = {key: value for key, value in args.__dict__.items() if value is not None}
